@@ -19,44 +19,144 @@ namespace InventoryAPI.Controllers
             _configuration = configuration;
         }
         
-        [HttpGet(Name = "GetProducts")]
+        [HttpGet("GetProducts")]
         public ActionResult GetProducts()
         {
-            NpgsqlConnection conn = new NpgsqlConnection(_configuration.GetSection("ConfigSettings").GetSection("DbConnection").Value);
-
-            conn.Open();
-            NpgsqlCommand cmd = new NpgsqlCommand("SELECT * FROM \"PRODUCTS\";", conn);
-
-            NpgsqlDataReader reader = cmd.ExecuteReader();
-            List<Product> products = new List<Product>();
-            while (reader.Read())
+            using (NpgsqlConnection conn = new NpgsqlConnection(_configuration.GetSection("ConfigSettings").GetSection("DbConnection").Value))
             {
-                if (reader.IsDBNull(5))
+                try
                 {
-                    products.Add(new Product(
-                    (int)reader["PRODUCT_ID"],
-                    reader["PRODUCT_NAME"].ToString(),
-                    reader["PRODUCT_DESCRIPTION"].ToString(),
-                    (decimal)reader["PRODUCT_PRICE"],
-                    (int)reader["PRODUCT_QUANTITY"]
-                    ));
+                    conn.Open();
+                    NpgsqlCommand cmd = new NpgsqlCommand("SELECT * FROM \"PRODUCTS\";", conn);
+
+                    NpgsqlDataReader reader = cmd.ExecuteReader();
+                    List<Product> products = new List<Product>();
+                    int? categoryID;
+                    while (reader.Read())
+                    {
+                        categoryID = null;
+                        if (!reader.IsDBNull(5))
+                        {
+                            categoryID = (int?)reader["CATEGORY_ID"];
+                        }
+                        products.Add(new Product(
+                            (int)reader["PRODUCT_ID"],
+                            reader["PRODUCT_NAME"].ToString(),
+                            reader["PRODUCT_DESCRIPTION"].ToString(),
+                            (decimal)reader["PRODUCT_PRICE"],
+                            (int)reader["PRODUCT_QUANTITY"],
+                            categoryID
+                            ));
+                    }
+                    //Return ok response and list of products.
+                    return Ok(products);
                 }
-                else
+                //Log error and return bad response
+                catch (Exception ex)
                 {
-                    products.Add(new Product(
-                    (int)reader["PRODUCT_ID"],
-                    reader["PRODUCT_NAME"].ToString(),
-                    reader["PRODUCT_DESCRIPTION"].ToString(),
-                    (decimal)reader["PRODUCT_PRICE"],
-                    (int)reader["PRODUCT_QUANTITY"],
-                    (int)reader["CATEGORY_ID"]
-                    ));
+                    _logger.LogError(ex.ToString());
+                    return BadRequest(ex.ToString());
                 }
                 
             }
 
-            return Ok(products);
+            
         }
+        [HttpGet("GetProductsByID")]
+        public ActionResult GetProductsByID(int productID)
+        {
+            using (NpgsqlConnection conn = new NpgsqlConnection(_configuration.GetSection("ConfigSettings").GetSection("DbConnection").Value))
+            {
+                try
+                {
+                    conn.Open();
+                    NpgsqlCommand cmd = new NpgsqlCommand("SELECT * FROM \"PRODUCTS\" WHERE \"PRODUCT_ID\" = @productID;", conn);
+                    cmd.Parameters.AddWithValue("@productID", productID);
+
+                    NpgsqlDataReader reader = cmd.ExecuteReader();
+                    List<Product> products = new List<Product>();
+                    int? categoryID;
+                    while (reader.Read())
+                    {
+                        //This checks if Category ID is null if it is it passes a null value since it is optional.
+                        categoryID = null;
+                        if (!reader.IsDBNull(5))
+                        {
+                            categoryID = (int?)reader["CATEGORY_ID"];
+                        }
+                        products.Add(new Product(
+                        (int)reader["PRODUCT_ID"],
+                        reader["PRODUCT_NAME"].ToString(),
+                        reader["PRODUCT_DESCRIPTION"].ToString(),
+                        (decimal)reader["PRODUCT_PRICE"],
+                        (int)reader["PRODUCT_QUANTITY"],
+                        categoryID
+                        ));
+
+
+                    }
+                    //Return ok response and list of products.
+                    return Ok(products);
+                }
+                //Log error and return bad response
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex.ToString());
+                    return BadRequest(ex.ToString());
+                }
+
+            }
+
+
+        }
+
+
+        [HttpGet("GetProductsByName")]
+        public ActionResult GetProductsByName(string productName)
+        {
+            using (NpgsqlConnection conn = new NpgsqlConnection(_configuration.GetSection("ConfigSettings").GetSection("DbConnection").Value))
+            {
+                try
+                {
+                    conn.Open();
+                    NpgsqlCommand cmd = new NpgsqlCommand("SELECT * FROM \"PRODUCTS\" WHERE UPPER(\"PRODUCT_NAME\") LIKE @productName;", conn);
+                    cmd.Parameters.AddWithValue("@productName", "%" + productName.ToUpper() + "%");
+
+                    NpgsqlDataReader reader = cmd.ExecuteReader();
+                    List<Product> products = new List<Product>();
+                    int? categoryID;
+                    while (reader.Read())
+                    {
+                        categoryID = null;
+                        if (!reader.IsDBNull(5))
+                        {
+                            categoryID = (int?)reader["CATEGORY_ID"];
+                        }
+                        products.Add(new Product(
+                            (int)reader["PRODUCT_ID"],
+                            reader["PRODUCT_NAME"].ToString(),
+                            reader["PRODUCT_DESCRIPTION"].ToString(),
+                            (decimal)reader["PRODUCT_PRICE"],
+                            (int)reader["PRODUCT_QUANTITY"],
+                            categoryID
+                            ));
+
+                    }
+                    //Return ok response and list of products.
+                    return Ok(products);
+                }
+                //Log error and return bad response
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex.ToString());
+                    return BadRequest(ex.ToString());
+                }
+
+            }
+
+
+        }
+
     }
 
 }
