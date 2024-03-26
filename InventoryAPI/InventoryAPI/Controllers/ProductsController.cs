@@ -258,6 +258,7 @@ namespace InventoryAPI.Controllers
                     }
                     else
                     {
+                        reader.DisposeAsync();
                         return BadRequest("Product_ID Not Valid");
                     }
                     return Ok();
@@ -310,11 +311,9 @@ namespace InventoryAPI.Controllers
                     else
                     {
                         //If the ID wasn't found we know there was an error.
-                        reader.Dispose();
+                        reader.DisposeAsync();
                         return BadRequest("Product_ID Not Valid");
                     }
-                    //Can dispose async now we have no more dependancies.
-                    reader.DisposeAsync();
                     return Ok();
 
 

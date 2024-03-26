@@ -151,6 +151,88 @@ namespace InventoryAPI.Controllers
                 return BadRequest(ex.ToString());
             }
         }
+
+        /***
+        * AddMarketplace
+        * Add a single Marketplace record to the database.
+        * 
+        ***/
+        [HttpPost("AddMarketplace")]
+        public ActionResult AddMarketplace([FromBody]Marketplace newMarketplace )
+        {
+
+            try
+            {
+                //Open database connection getting the config value from the appsettings.
+                using (NpgsqlConnection conn = new NpgsqlConnection(_configuration.GetSection("ConfigSettings").GetSection("DbConnection").Value))
+                {
+                    conn.Open();
+                    //Create the command for the SQL to execute.
+                    NpgsqlCommand cmd = new NpgsqlCommand("INSERT INTO \"MARKETPLACES\" (\"MARKETPLACE_NAME\", \"MARKETPLACE_DESCRIPTION\") VALUES (@marketplaceName, @marketplaceDescription);", conn);
+                    cmd.Parameters.AddWithValue("@marketplaceName", newMarketplace.marketplaceName);
+                    cmd.Parameters.AddWithValue("@marketplaceDescription", newMarketplace.marketplaceDescription);
+                    //Execute the SQL Query.
+                    cmd.ExecuteNonQuery();
+                    
+                    //Once completed send an ok HTTP response (200 is a successful response code) stating the Marketplace was added.
+                    return Ok();
+                };
+            }
+            //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.ToString());
+                return BadRequest(ex.ToString());
+            }
+        }
+
+
+        /***
+        * EditMarketplace
+        * Edit a single marketplace based off marketplace ID
+        * 
+        ***/
+        [HttpPut("EditMarketplace")]
+        public ActionResult EditMarketplace([FromBody] Marketplace newMarketplace, int marketplaceID)
+        {
+
+            try
+            {
+                //Open database connection getting the config value from the appsettings.
+                using (NpgsqlConnection conn = new NpgsqlConnection(_configuration.GetSection("ConfigSettings").GetSection("DbConnection").Value))
+                {
+                    conn.Open();
+                    NpgsqlCommand cmd = new NpgsqlCommand();
+                    cmd.Connection = conn;
+                    cmd.CommandText = "SELECT * FROM \"MARKETPLACES\" WHERE \"MARKETPLACE_ID\" = @marketplaceID;";
+                    NpgsqlDataReader reader = cmd.ExecuteReader();
+
+                    if (reader.HasRows)
+                    {
+                        reader.Dispose();
+                        cmd.CommandText = "UPDATE \"MARKETPLACES\" SET \"MARKETPLACE_NAME\" = @marketplaceName, \"MARKETPLACE_DESCRIPTION\" = @marketplaceDescription\" WHERE \"MARKETPLACE_ID\" = @marketplaceID";
+
+                        cmd.ExecuteNonQuery();
+                    }
+                    else
+                    {
+                        reader.DisposeAsync();
+                        return BadRequest("Marketplace ID Not Found");
+                    }
+
+                    return Ok();
+                };
+            }
+            //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.ToString());
+                return BadRequest(ex.ToString());
+            }
+        }
+
+
+
     }
 
 }
