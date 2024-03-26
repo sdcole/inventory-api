@@ -168,6 +168,20 @@ END;
   - %URL%/Products/GetProductsByName
     - Returns a list of products that match a case insensitive like sql statement.
 
+- Post
+
+  - %URL%/Products/AddProducts
+  - Adds product to the database.
+
+- Put
+
+  - %URL/Products/UpdateProduct
+  - Updates a product based off product ID.
+
+- Delete
+  - %URL%/Products/DeleteProduct
+  - Deletes a product based off a product ID.
+
 ### Categories
 
 - Get

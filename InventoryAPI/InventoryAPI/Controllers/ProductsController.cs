@@ -110,7 +110,12 @@ namespace InventoryAPI.Controllers
 
         }
 
-
+        /***
+         * GetProductsByName
+         * 
+         * Returns a list of products based of a DB LIKE %name% statement.
+         * 
+         ***/
         [HttpGet("GetProductsByName")]
         public ActionResult GetProductsByName(string productName)
         {
@@ -155,6 +160,174 @@ namespace InventoryAPI.Controllers
             }
 
 
+        }
+
+        /***
+         * AddProduct
+         * 
+         * Stores a passed product to DB.
+         ***/
+        [HttpPost("AddProduct")]
+        public ActionResult AddProduct([FromBody] Product newProduct) 
+        {
+            using (NpgsqlConnection conn = new NpgsqlConnection(_configuration.GetSection("ConfigSettings").GetSection("DbConnection").Value))
+            {
+                try
+                {
+                    conn.Open();
+                    NpgsqlCommand cmd = new NpgsqlCommand("INSERT INTO \"PRODUCTS\" (\"PRODUCT_NAME\", \"PRODUCT_DESCRIPTION\", \"PRODUCT_PRICE\", \"PRODUCT_QUANTITY\", \"CATEGORY_ID\") " +
+                        "VALUES (@productName, @productDescription, @productPrice, @productQuantity, @categoryID);", conn);
+                    cmd.Parameters.AddWithValue("@productName", newProduct.productName);
+                    cmd.Parameters.AddWithValue("@productDescription", newProduct.productDescription);
+                    cmd.Parameters.AddWithValue("@productPrice", newProduct.productPrice);
+                    cmd.Parameters.AddWithValue("@productQuantity", newProduct.productQuantity);
+                    //If no category gets assigned then send it as DBNULL.
+                    if (newProduct.categoryID == null)
+                    {
+                        cmd.Parameters.AddWithValue("@categoryID", DBNull.Value);
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@categoryID", newProduct.categoryID);
+                    }
+                    
+
+                    cmd.ExecuteNonQuery();
+                    
+                    //Return ok response and list of products.
+                    
+                }
+                //Log error and return bad response
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex.ToString());
+                    return BadRequest(ex.ToString());
+                }
+
+            }
+            return Ok();
+        }
+
+        /***
+         * EditProduct
+         * 
+         * Edits a product based off productID
+         ***/
+        [HttpPut("EditProduct")]
+        public ActionResult EditProduct([FromBody] Product newProduct, int productID)
+        {
+            using (NpgsqlConnection conn = new NpgsqlConnection(_configuration.GetSection("ConfigSettings").GetSection("DbConnection").Value))
+            {
+                try
+                {
+                    conn.Open();
+                    NpgsqlCommand cmd = new NpgsqlCommand();
+                    cmd.Connection = conn;
+
+
+                    //Check if a product with that ID exists.
+                    cmd.CommandText = "SELECT * FROM \"PRODUCTS\" WHERE \"PRODUCT_ID\" = @productID;";
+                    cmd.Parameters.AddWithValue("@productID", productID);
+                    NpgsqlDataReader reader = cmd.ExecuteReader();
+
+                    //If it exists we update it.
+                    if (reader.HasRows)
+                    {
+                        //Dispose of reader (cannot do this async since we are using the cmd).
+                        reader.Dispose();
+                        cmd.CommandText = "UPDATE \"PRODUCTS\" SET \"PRODUCT_NAME\" = @productName, \"PRODUCT_DESCRIPTION\" = @productDescription, \"PRODUCT_PRICE\" = @productPrice, \"PRODUCT_QUANTITY\" = @productQuantity, \"CATEGORY_ID\" = @categoryID WHERE \"PRODUCT_ID\" = @updateID;";
+                        cmd.Parameters.AddWithValue("@productName", newProduct.productName);
+                        cmd.Parameters.AddWithValue("@productDescription", newProduct.productDescription);
+                        cmd.Parameters.AddWithValue("@productPrice", newProduct.productPrice);
+                        cmd.Parameters.AddWithValue("@productQuantity", newProduct.productQuantity);
+                        //If no category gets assigned then send it as DBNULL.
+                        if (newProduct.categoryID == null)
+                        {
+                            cmd.Parameters.AddWithValue("@categoryID", DBNull.Value);
+                        }
+                        else
+                        {
+                            cmd.Parameters.AddWithValue("@categoryID", newProduct.categoryID);
+                        }
+                        cmd.Parameters.AddWithValue("@updateID", productID);
+
+
+                        cmd.ExecuteNonQuery();
+
+                        //Return ok response and list of products.
+                    }
+                    else
+                    {
+                        return BadRequest("Product_ID Not Valid");
+                    }
+                    return Ok();
+
+
+
+                }
+                //Log error and return bad response
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex.ToString());
+                    return BadRequest(ex.ToString());
+                }
+
+            }
+        }
+
+        /***
+         * DeleteProduct
+         * 
+         * Deletes a product based off a given productID.
+         ***/
+        [HttpDelete("DeleteProduct")]
+        public ActionResult DeleteProduct(int productID)
+        {
+            using (NpgsqlConnection conn = new NpgsqlConnection(_configuration.GetSection("ConfigSettings").GetSection("DbConnection").Value))
+            {
+                try
+                {
+                    conn.Open();
+                    NpgsqlCommand cmd = new NpgsqlCommand();
+                    cmd.Connection = conn;
+                    //Check if productID is available.
+                    cmd.CommandText = "SELECT * FROM \"PRODUCTS\" WHERE \"PRODUCT_ID\" = @productID;";
+                    cmd.Parameters.AddWithValue("@productID", productID);
+                    NpgsqlDataReader reader = cmd.ExecuteReader();
+
+                    
+                    if (reader.HasRows)
+                    {
+                        reader.Dispose();
+                        cmd.CommandText = "DELETE FROM \"PRODUCTS\" WHERE \"PRODUCT_ID\" = @productID;";
+                        cmd.Parameters.AddWithValue("@productID", productID);
+
+                        
+                        cmd.ExecuteNonQuery();
+
+                        //Return ok response and stating that it was deleted from the database.
+                    }
+                    else
+                    {
+                        //If the ID wasn't found we know there was an error.
+                        reader.Dispose();
+                        return BadRequest("Product_ID Not Valid");
+                    }
+                    //Can dispose async now we have no more dependancies.
+                    reader.DisposeAsync();
+                    return Ok();
+
+
+
+                }
+                //Log error and return bad response
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex.ToString());
+                    return BadRequest(ex.ToString());
+                }
+
+            }
         }
 
     }
