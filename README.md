@@ -226,3 +226,46 @@ END;
 
   - %URL%/Marketplaces/GetMarketpalcesByName
     - Returns a list of marketplaces that match a case insensitive like sql statement.
+
+- Post
+
+  - %URL%/Marketplaces/AddMarketplace
+  - Adds a Marketplace entry into the Database
+
+- Put
+
+  - %URL%/Marketplaces/EditMarketplace
+  - Edits a marketplace entry based on the MarketplaceID
+
+- Delete
+  - %URL%/Marketplaces/DeleteMarketplace
+  - Deletes a marketplace entry.
+
+### Inventory
+
+- Get
+
+  - %URL%/Inventory/GetInventory
+
+    - Returns a list of all inventory changes.
+
+  - %URL%/Inventory/GetInventoryByID
+
+    - Returns a single inventory that matches a inventory ID.
+
+  - %URL%/Inventory/GetInventoryByName
+    - Returns a list of inventory that match a case insensitive like sql statement.
+
+- Post
+
+  - %URL%/Inventory/AddInventory
+  - Adds a Inventory entry into the Database
+
+- Put
+
+  - %URL%/Inventory/EditInventory
+  - Edits a inventory entry based on the InventoryID
+
+- Delete
+  - %URL%/Inventory/DeleteInventory
+  - Deletes a inventory entry.

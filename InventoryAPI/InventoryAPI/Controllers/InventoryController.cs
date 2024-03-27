@@ -158,5 +158,102 @@ namespace InventoryAPI.Controllers
             }
         }
 
+
+        /***
+        * AddInventory
+        * Adds an inventory object to the database.
+        * 
+        ***/
+        [HttpPost("AddInventory")]
+        public ActionResult AddInventory([FromBody]Inventory newInventory)
+        {
+            try
+            {
+                //Open database connection getting the config value from the appsettings.
+                using (NpgsqlConnection conn = new NpgsqlConnection(_configuration.GetSection("ConfigSettings").GetSection("DbConnection").Value))
+                {
+                    conn.Open();
+                    //Create the command for the SQL to execute.
+                    NpgsqlCommand cmd = new NpgsqlCommand("INSERT INTO \"INVENTORY\" (\"PRODUCT_ID\", \"ACTION_ID\", \"QUANTITY_CHANGED\", \"TIMESTAMP\") VALUES" +
+                        "(@productID, @actionID, @quantityChanged, @timestamp);", conn);
+                    cmd.Parameters.AddWithValue("@productID", newInventory.productID);
+                    cmd.Parameters.AddWithValue("@actionID", newInventory.actionID);
+                    cmd.Parameters.AddWithValue("@quantityChanged", newInventory.quantityChanged);
+                    cmd.Parameters.AddWithValue("@timestamp", newInventory.timestamp);
+
+                    //Add inventory entry to database.
+                    cmd.ExecuteNonQuery();
+                    
+
+                    //Once completed send an ok HTTP response (200 is a successful response code);
+                    return Ok();
+                };
+            }
+            //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.ToString());
+                return BadRequest(ex.ToString());
+            }
+        }
+
+
+        /***
+        * EditInventory
+        * Edits an inventory object to the database.
+        * 
+        ***/
+        [HttpPut("EditInventory")]
+        public ActionResult EditInventory([FromBody] Inventory newInventory, int inventoryID)
+        {
+            try
+            {
+                //Open database connection getting the config value from the appsettings.
+                using (NpgsqlConnection conn = new NpgsqlConnection(_configuration.GetSection("ConfigSettings").GetSection("DbConnection").Value))
+                {
+                    conn.Open();
+                    //Create the command for the SQL to execute.
+                    NpgsqlCommand cmd = new NpgsqlCommand();
+                    cmd.Connection = conn;
+
+                    cmd.CommandText = "SELECT * FROM \"INVENTORY\" WHERE \"INVENTORY_ID\" = @inventoryID";
+                    cmd.Parameters.AddWithValue("@inventoryID", inventoryID);
+
+                    NpgsqlDataReader reader = cmd.ExecuteReader();
+
+                    if (reader.HasRows)
+                    {
+                        reader.Dispose();
+
+                        cmd.CommandText = "UPDATE \"INVENTORY\" SET (\"PRODUCT_ID\" = @productID, \"ACTION_ID\" = @actionID, \"QUANTITY_CHANGED\" = @quantityChanged, \"TIMESTAMP\" = @timestamp) " +
+                            "WHERE \"INVENTORY_ID\" = @inventoryID";
+                        cmd.Parameters.AddWithValue("@productID", newInventory.productID);
+                        cmd.Parameters.AddWithValue("@actionID", newInventory.actionID);
+                        cmd.Parameters.AddWithValue("@quantityChanged", newInventory.quantityChanged);
+                        cmd.Parameters.AddWithValue("@timestamp", newInventory.timestamp);
+
+                        cmd.Parameters.AddWithValue("@inventoryID", inventoryID);
+
+                        //Add inventory entry to database.
+                        cmd.ExecuteNonQuery();
+                    }
+                    else
+                    {
+                        reader.DisposeAsync();
+                        return BadRequest("InventoryID Not Found");
+                    }
+
+
+                    //Once completed send an ok HTTP response (200 is a successful response code);
+                    return Ok();
+                };
+            }
+            //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.ToString());
+                return BadRequest(ex.ToString());
+            }
+        }
     }
 }

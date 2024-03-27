@@ -205,13 +205,16 @@ namespace InventoryAPI.Controllers
                     NpgsqlCommand cmd = new NpgsqlCommand();
                     cmd.Connection = conn;
                     cmd.CommandText = "SELECT * FROM \"MARKETPLACES\" WHERE \"MARKETPLACE_ID\" = @marketplaceID;";
+                    cmd.Parameters.AddWithValue("@marketplaceID", marketplaceID);
                     NpgsqlDataReader reader = cmd.ExecuteReader();
 
                     if (reader.HasRows)
                     {
                         reader.Dispose();
-                        cmd.CommandText = "UPDATE \"MARKETPLACES\" SET \"MARKETPLACE_NAME\" = @marketplaceName, \"MARKETPLACE_DESCRIPTION\" = @marketplaceDescription\" WHERE \"MARKETPLACE_ID\" = @marketplaceID";
-
+                        cmd.CommandText = "UPDATE \"MARKETPLACES\" SET \"MARKETPLACE_NAME\" = @marketplaceName, \"MARKETPLACE_DESCRIPTION\" = @marketplaceDescription WHERE \"MARKETPLACE_ID\" = @marketplaceID;";
+                        cmd.Parameters.AddWithValue("@marketplaceName", newMarketplace.marketplaceName);
+                        cmd.Parameters.AddWithValue("@marketplaceDescription", newMarketplace.marketplaceDescription);
+                        cmd.Parameters.AddWithValue("@marketplaceID", marketplaceID);
                         cmd.ExecuteNonQuery();
                     }
                     else
@@ -231,6 +234,51 @@ namespace InventoryAPI.Controllers
             }
         }
 
+
+        /***
+        * DeleteMarketplace
+        * Delete a single marketplace based off marketplace ID
+        * 
+        ***/
+        [HttpDelete("DeleteMarketplace")]
+        public ActionResult DeleteMarketplace(int marketplaceID)
+        {
+
+            try
+            {
+                //Open database connection getting the config value from the appsettings.
+                using (NpgsqlConnection conn = new NpgsqlConnection(_configuration.GetSection("ConfigSettings").GetSection("DbConnection").Value))
+                {
+                    conn.Open();
+                    NpgsqlCommand cmd = new NpgsqlCommand();
+                    cmd.Connection = conn;
+                    cmd.CommandText = "SELECT * FROM \"MARKETPLACES\" WHERE \"MARKETPLACE_ID\" = @marketplaceID;";
+                    cmd.Parameters.AddWithValue("@marketplaceID", marketplaceID);
+                    NpgsqlDataReader reader = cmd.ExecuteReader();
+
+                    if (reader.HasRows)
+                    {
+                        reader.Dispose();
+                        cmd.CommandText = "DELETE FROM \"MARKETPLACES\" WHERE \"MARKETPLACE_ID\" = @marketplaceID;";
+                        cmd.Parameters.AddWithValue("@marketplaceID", marketplaceID);
+                        cmd.ExecuteNonQuery();
+                    }
+                    else
+                    {
+                        reader.DisposeAsync();
+                        return BadRequest("Marketplace ID Not Found");
+                    }
+
+                    return Ok();
+                };
+            }
+            //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.ToString());
+                return BadRequest(ex.ToString());
+            }
+        }
 
 
     }
