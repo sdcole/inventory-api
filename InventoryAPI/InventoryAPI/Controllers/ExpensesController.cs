@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
+using System;
 using System.Security.Cryptography;
 
 namespace InventoryAPI.Controllers
@@ -78,7 +79,7 @@ namespace InventoryAPI.Controllers
 
                     //Once completed send an ok HTTP response (200 is a successful response code) with the list of expenses.
                     return Ok(expenses);
-                };
+                }
             }
             //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
             catch (Exception ex)
@@ -147,7 +148,7 @@ namespace InventoryAPI.Controllers
 
                     //Once completed send an ok HTTP response (200 is a successful response code) with the list of expenses.
                     return Ok(expenses);
-                };
+                }
             }
             //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
             catch (Exception ex)
@@ -214,13 +215,163 @@ namespace InventoryAPI.Controllers
 
                     //Once completed send an ok HTTP response (200 is a successful response code) with the list of expenses.
                     return Ok(expenses);
-                };
+                }
             }
             //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
             catch (Exception ex)
             {
                 _logger.LogError(ex.ToString());
                 return BadRequest(ex.ToString());
+            }
+        }
+        /***
+         * AddExpense
+         * 
+         * Stores a passed expense to DB.
+         ***/
+        [HttpPost("AddExpense")]
+        public ActionResult AddExpense([FromBody] Expense newExpense)
+        {
+            using (NpgsqlConnection conn = new NpgsqlConnection(_configuration.GetSection("ConfigSettings").GetSection("DbConnection").Value))
+            {
+                try
+                {
+                    conn.Open();
+                    NpgsqlCommand cmd = new NpgsqlCommand("INSERT INTO \"EXPENSES\" (\"EXPENSE_DESCRIPTION\", \"EXPENSE_AMOUNT\", \"EXPENSE_DATE\", \"CATEGORY_ID\",  \"INVENTORY_ID\", \"MARKETPLACE_ID\") " +
+                        "VALUES (@expenseDescription, @expenseAmount, @expenseDate, @categoryID, @inventoryID, @marketplaceID);", conn);
+                    cmd.Parameters.AddWithValue("@expenseDescription", newExpense.expenseDescription);
+                    cmd.Parameters.AddWithValue("@expenseAmount", newExpense.expenseAmount);
+                    cmd.Parameters.AddWithValue("@expenseDate", newExpense.expenseDate);
+
+                    // If no category gets assigned then send it as DBNULL.
+                        if (newExpense.categoryID == null)
+                    {
+                        cmd.Parameters.AddWithValue("@categoryID", DBNull.Value);
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@categoryID", newExpense.categoryID);
+                    }
+                    //If no inventory gets assigned then send it as DBNULL.
+                    if (newExpense.inventoryID == null)
+                    {
+                        cmd.Parameters.AddWithValue("@inventoryID", DBNull.Value);
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@categoryID", newExpense.inventoryID);
+                    }
+                    //If no marketplace gets assigned then send it as DBNULL.
+                    if (newExpense.marketplaceID == null)
+                    {
+                        cmd.Parameters.AddWithValue("@marketplaceID", DBNull.Value);
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@marketplaceID", newExpense.marketplaceID);
+                    }
+
+
+                    cmd.ExecuteNonQuery();
+
+                    //Return ok response and list of products.
+
+                }
+                //Log error and return bad response
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex.ToString());
+                    return BadRequest(ex.ToString());
+                }
+
+            }
+            return Ok();
+        }
+
+        /***
+         * EditExpense
+         * 
+         * Edits a expense based off expenseID
+         ***/
+        [HttpPut("EditExpense")]
+        public ActionResult EditExpense([FromBody] Expense newExpense, int expenseID)
+        {
+            using (NpgsqlConnection conn = new NpgsqlConnection(_configuration.GetSection("ConfigSettings").GetSection("DbConnection").Value))
+            {
+                try
+                {
+                    conn.Open();
+                    NpgsqlCommand cmd = new NpgsqlCommand();
+                    cmd.Connection = conn;
+
+
+                    //Check if a expense with that ID exists.
+                    cmd.CommandText = "SELECT * FROM \"EXPENSES\" WHERE \"EXPENSE_ID\" = @expenseID;";
+                    cmd.Parameters.AddWithValue("@expenseID", expenseID);
+                    NpgsqlDataReader reader = cmd.ExecuteReader();
+
+                    //If it exists we update it.
+                    if (reader.HasRows)
+                    {
+                        //Dispose of reader (cannot do this async since we are using the cmd).
+                        reader.Dispose();
+                        cmd.CommandText = "UPDATE \"EXPENSES\" SET \"EXPENSE_DESCRIPTION\" = @expenseDescription, \"EXPENSE_AMOUNT\" = @expenseAmount, \"EXPENSE_DATE\" = @expenseDate, \"CATEGORY_ID\" = @categoryID, \"INVENTORY_ID\" = @inventoryID, \"MARKETPLACE_ID\" = @marketplaceID WHERE \"EXPENSE_ID\" = @updateID;";
+                        cmd.Parameters.AddWithValue("@expenseDescription", newExpense.expenseDescription);
+                        cmd.Parameters.AddWithValue("@expenseAmount", newExpense.expenseAmount);
+                        cmd.Parameters.AddWithValue("@expenseDate", newExpense.expenseDate);
+
+                        //If no category gets assigned then send it as DBNULL.
+                        if (newExpense.categoryID == null)
+                        {
+                            cmd.Parameters.AddWithValue("@categoryID", DBNull.Value);
+                        }
+                        else
+                        {
+                            cmd.Parameters.AddWithValue("@categoryID", newExpense.categoryID);
+                        }
+                        //If no inventory gets assigned then send it as DBNULL.
+                        if (newExpense.inventoryID == null)
+                        {
+                            cmd.Parameters.AddWithValue("@inventoryID", DBNull.Value);
+                        }
+                        else
+                        {
+                            cmd.Parameters.AddWithValue("@categoryID", newExpense.inventoryID);
+                        }
+                        //If no marketplace gets assigned then send it as DBNULL.
+                        if (newExpense.marketplaceID == null)
+                        {
+                            cmd.Parameters.AddWithValue("@marketplaceID", DBNull.Value);
+                        }
+                        else
+                        {
+                            cmd.Parameters.AddWithValue("@marketplaceID", newExpense.marketplaceID);
+                        }
+                        cmd.Parameters.AddWithValue("@updateID", expenseID);
+
+
+                        cmd.ExecuteNonQuery();
+
+
+                        //Return ok response and list of products.
+                    }
+                    else
+                    {
+                        reader.DisposeAsync();
+                        return BadRequest("Product_ID Not Valid");
+                    }
+                    return Ok();
+
+
+
+                }
+                //Log error and return bad response
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex.ToString());
+                    return BadRequest(ex.ToString());
+                }
+
             }
         }
     }

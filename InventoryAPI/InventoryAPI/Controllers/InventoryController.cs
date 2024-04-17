@@ -55,7 +55,7 @@ namespace InventoryAPI.Controllers
 
                     //Once completed send an ok HTTP response (200 is a successful response code) with the list of inventory entries.
                     return Ok(inventoryList);
-                };
+                }
             }
             //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
             catch (Exception ex)
@@ -101,7 +101,7 @@ namespace InventoryAPI.Controllers
 
                     //Once completed send an ok HTTP response (200 is a successful response code) with the list of inventory entries.
                     return Ok(inventoryList);
-                };
+                }
             }
             //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
             catch (Exception ex)
@@ -148,7 +148,7 @@ namespace InventoryAPI.Controllers
 
                     //Once completed send an ok HTTP response (200 is a successful response code) with the list of inventory entries.
                     return Ok(inventoryList);
-                };
+                }
             }
             //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
             catch (Exception ex)
@@ -187,7 +187,7 @@ namespace InventoryAPI.Controllers
 
                     //Once completed send an ok HTTP response (200 is a successful response code);
                     return Ok();
-                };
+                }
             }
             //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
             catch (Exception ex)
@@ -246,7 +246,7 @@ namespace InventoryAPI.Controllers
 
                     //Once completed send an ok HTTP response (200 is a successful response code);
                     return Ok();
-                };
+                }
             }
             //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
             catch (Exception ex)
@@ -255,5 +255,52 @@ namespace InventoryAPI.Controllers
                 return BadRequest(ex.ToString());
             }
         }
+        /***
+        * DeleteInventory
+        * Deletes Inventory ID based on the Inventory ID
+        * 
+        ***/
+        [HttpDelete("DeleteInventory")]
+        public ActionResult DeleteInventory(int inventoryID)
+        {
+            try
+            {
+                using (NpgsqlConnection conn = new NpgsqlConnection(_configuration.GetSection("ConfigSettings").GetSection("DbConnection").Value))
+                {
+                    conn.Open();
+                    //Create the command for the SQL to execute.
+                    NpgsqlCommand cmd = new NpgsqlCommand();
+                    cmd.Connection = conn;
+
+                    cmd.CommandText = "SELECT * FROM \"INVENTORY\" WHERE \"INVENTORY_ID\" = @inventoryID";
+                    cmd.Parameters.AddWithValue("@inventoryID", inventoryID);
+
+                    NpgsqlDataReader reader = cmd.ExecuteReader();
+                    //Check if there is an inventory with given ID
+                    if (reader.HasRows)
+                    {
+                        reader.Dispose();
+
+                        cmd.CommandText = "DELETE FROM \"INVENTORY\" WHERE \"INVENTORY_ID\" = @inventoryID";
+                        cmd.Parameters.AddWithValue("@inventoryID", inventoryID);
+
+                        cmd.ExecuteNonQuery();
+                    }
+                    else
+                    {
+                        reader.DisposeAsync();
+                        return BadRequest("InventoryID Not Found");
+                    }
+
+
+                    return Ok();
+                }
+            } catch (Exception ex)
+            {
+                _logger.LogError(ex.ToString());
+                return BadRequest(ex.ToString());
+            }
+        }
+
     }
 }

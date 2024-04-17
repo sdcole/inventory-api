@@ -53,7 +53,7 @@ namespace InventoryAPI.Controllers
 
                     //Once completed send an ok HTTP response (200 is a successful response code) with the list of Marketplaces.
                     return Ok(marketplaces);
-                };
+                }
             }
             //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
             catch (Exception ex)
@@ -97,7 +97,7 @@ namespace InventoryAPI.Controllers
 
                     //Once completed send an ok HTTP response (200 is a successful response code) with the list of Marketplaces.
                     return Ok(marketplaces);
-                };
+                }
             }
             //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
             catch (Exception ex)
@@ -142,7 +142,7 @@ namespace InventoryAPI.Controllers
 
                     //Once completed send an ok HTTP response (200 is a successful response code) with the list of Marketplaces.
                     return Ok(marketplaces);
-                };
+                }
             }
             //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
             catch (Exception ex)
@@ -176,7 +176,7 @@ namespace InventoryAPI.Controllers
                     
                     //Once completed send an ok HTTP response (200 is a successful response code) stating the Marketplace was added.
                     return Ok();
-                };
+                }
             }
             //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
             catch (Exception ex)
@@ -224,7 +224,7 @@ namespace InventoryAPI.Controllers
                     }
 
                     return Ok();
-                };
+                }
             }
             //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
             catch (Exception ex)
@@ -270,7 +270,7 @@ namespace InventoryAPI.Controllers
                     }
 
                     return Ok();
-                };
+                }
             }
             //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
             catch (Exception ex)

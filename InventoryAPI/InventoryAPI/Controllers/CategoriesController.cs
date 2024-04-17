@@ -1,4 +1,5 @@
 ﻿using InventoryAPI.Models;
+using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
@@ -53,7 +54,7 @@ namespace InventoryAPI.Controllers
 
                     //Once completed send an ok HTTP response (200 is a successful response code) with the list of categories.
                     return Ok(categories);
-                };
+                }
             }
             //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
             catch (Exception ex)
@@ -98,7 +99,7 @@ namespace InventoryAPI.Controllers
 
                     //Once completed send an ok HTTP response (200 is a successful response code) with the list of categories.
                     return Ok(categories);
-                };
+                }
             }
             //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
             catch (Exception ex)
@@ -137,7 +138,7 @@ namespace InventoryAPI.Controllers
 
                     //Once completed send an ok HTTP response (200 is a successful response code) with the list of categories.
                     return Ok(categories);
-                };
+                }
             }
             //If issues occur log the error and send a bad HTTP response (500 is a bad response code).
             catch (Exception ex)
