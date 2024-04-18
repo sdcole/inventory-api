@@ -374,6 +374,60 @@ namespace InventoryAPI.Controllers
 
             }
         }
+
+
+        /***
+        * DeleteExpense
+        * 
+        * Deletes a expense based off a given expenseID.
+        ***/
+        [HttpDelete("DeleteExpense")]
+        public ActionResult DeleteExpense(int expenseID)
+        {
+            using (NpgsqlConnection conn = new NpgsqlConnection(_configuration.GetSection("ConfigSettings").GetSection("DbConnection").Value))
+            {
+                try
+                {
+                    conn.Open();
+                    NpgsqlCommand cmd = new NpgsqlCommand();
+                    cmd.Connection = conn;
+                    //Check if productID is available.
+                    cmd.CommandText = "SELECT * FROM \"EXPENSES\" WHERE \"EXPENSE_ID\" = @expenseID;";
+                    cmd.Parameters.AddWithValue("@expenseID", expenseID);
+                    NpgsqlDataReader reader = cmd.ExecuteReader();
+
+
+                    if (reader.HasRows)
+                    {
+                        reader.Dispose();
+                        cmd.CommandText = "DELETE FROM \"EXPENSES\" WHERE \"EXPENSE_ID\" = @expenseID;";
+                        cmd.Parameters.AddWithValue("@expenseID", expenseID);
+
+
+                        cmd.ExecuteNonQuery();
+
+                        //Return ok response and stating that it was deleted from the database.
+                    }
+                    else
+                    {
+                        //If the ID wasn't found we know there was an error.
+                        reader.DisposeAsync();
+                        return BadRequest("Product_ID Not Valid");
+                    }
+                    return Ok();
+
+
+
+                }
+                //Log error and return bad response
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex.ToString());
+                    return BadRequest(ex.ToString());
+                }
+
+            }
+        }
     }
 
 }
