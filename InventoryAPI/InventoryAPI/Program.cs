@@ -47,9 +47,10 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: "DefaultPolicy",
         policy =>
         {
-            policy.AllowAnyOrigin()
+            policy.WithOrigins("http://192.168.0.10:3000")
             .AllowAnyMethod()
-            .AllowAnyHeader();
+            .AllowAnyHeader()
+            .AllowCredentials();
         });
 });
 

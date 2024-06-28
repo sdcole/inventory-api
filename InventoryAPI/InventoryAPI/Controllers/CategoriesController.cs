@@ -1,4 +1,5 @@
 ﻿using InventoryAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -9,6 +10,7 @@ namespace InventoryAPI.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [Authorize]
     public class CategoriesController : ControllerBase
     {
 

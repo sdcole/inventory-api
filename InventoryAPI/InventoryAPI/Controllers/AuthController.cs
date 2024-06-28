@@ -1,34 +1,50 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using InventoryAPI.Models;
 using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+using InventoryAPI.Models;
+using Microsoft.AspNetCore.Http;
 
-namespace InventoryAPI.Controllers
+[ApiController]
+[Route("api/[controller]")]
+public class AuthController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class AuthController : ControllerBase
+    private readonly IConfiguration _configuration;
+    private readonly JwtHelper _jwtHelper;
+
+    public AuthController(IConfiguration configuration, JwtHelper jwtHelper)
     {
-        private readonly IConfiguration _configuration;
-        private readonly JwtHelper _jwtHelper;
+        _configuration = configuration;
+        _jwtHelper = jwtHelper;
+    }
 
-        public AuthController(IConfiguration configuration, JwtHelper jwtHelper)
+    [HttpPost("Login")]
+    public IActionResult Login([FromBody] LoginRequest loginRequest)
+    {
+        // Validate user credentials
+        if (loginRequest.username == "test" && loginRequest.password == "test") // Replace with your validation logic
         {
-            _configuration = configuration;
-            _jwtHelper = jwtHelper;
-        }
+            var token = _jwtHelper.GenerateToken(loginRequest.username);
 
-        [HttpPost("Login")]
-        public IActionResult Login([FromBody] LoginRequest loginRequest)
-        {
-            // Validate user credentials
-            if (loginRequest.username == "test" && loginRequest.password == "test") // Replace with your validation logic
+            // Set the token in a cookie
+            var cookieOptions = new CookieOptions
             {
-                var token = _jwtHelper.GenerateToken(loginRequest.username);
-                return Ok(new { token });
-            }
+                HttpOnly = true,
+                //Expires = DateTime.UtcNow.AddMinutes(_configuration.GetValue<double>("Jwt:ExpirationMinutes")),
+                Expires = DateTime.UtcNow.AddMinutes(15),
+                //Secure = true, // Set to true in production to enforce HTTPS
+                Secure = false,
+                SameSite = SameSiteMode.None // or SameSiteMode.Lax based on your needs
+            };
 
-            return Unauthorized(new { message = "Invalid credentials" });
+            Response.Cookies.Append("jwt", token, cookieOptions);
+
+            return Ok(new { message = "Login successful" });
         }
+
+        return Unauthorized(new { message = "Invalid credentials" });
     }
 }
