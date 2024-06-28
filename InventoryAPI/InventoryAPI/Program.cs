@@ -1,8 +1,11 @@
 using InventoryAPI.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Sinks.PostgreSQL;
 using System.Collections.Generic;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,15 +28,17 @@ var logger = new LoggerConfiguration()
         }
     )
     .CreateLogger();
+
 try
 {
     // Log a message indicating that the web application has started
-    logger.Error("This is annoying");
+    logger.Information("Web API Starting");
 }
 catch (Exception ex)
 {
     Console.WriteLine($"Error logging startup message: {ex.Message}");
 }
+
 builder.Host.UseSerilog(logger);
 
 // Add policy
@@ -50,6 +55,32 @@ builder.Services.AddCors(options =>
 
 // Add services to the container.
 builder.Services.AddControllers();
+
+// Configure JWT authentication
+var jwtConfig = builder.Configuration.GetSection("Jwt");
+var key = Encoding.ASCII.GetBytes(jwtConfig["Key"]);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = false,
+        ValidateAudience = false
+    };
+});
+
+// Register JwtHelper
+builder.Services.AddSingleton<JwtHelper>();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -69,6 +100,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("DefaultPolicy");
 
+app.UseAuthentication(); // Add this line to enable authentication middleware
 app.UseAuthorization();
 
 app.MapControllers();
